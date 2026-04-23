@@ -7,6 +7,16 @@
   --camp-cream: #fdf6e3;
   --camp-navy: #3d4f66;
   --camp-paper-shadow: rgba(61, 79, 102, 0.12);
+  /* Trip card + stacked to-do slip: one neutral offset (no green/rust shift at the seam) */
+  --trip-dashboard-offset-shadow: rgba(118, 124, 132, 0.32);
+  /* Near-white page behind cards */
+  --page-offwhite: #fafafa;
+  --cartoon-ink: #2a3644;
+  /* Paper card fill — also used for type on the pine top bar */
+  --paper-surface-fill: color-mix(in srgb, var(--camp-cream) 94%, #fffef8);
+  /* Deep pine (top navigation) */
+  --nav-pine: #1b3d34;
+  --nav-pine-edge: color-mix(in srgb, black 32%, var(--nav-pine));
   --background: var(--camp-cream);
   --foreground: var(--camp-forest);
 }
@@ -18,41 +28,35 @@
   --color-camp-rust: #713d27;
   --color-camp-cream: #fdf6e3;
   --color-camp-navy: #3d4f66;
+  --color-page-offwhite: var(--page-offwhite);
   --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-arvo), ui-serif, Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-/* Subtle camp ground: cream + soft forest wash */
+/* Page = clean near-white; cards carry the camp color story */
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
-  background-color: var(--camp-cream);
-  background-image:
-    radial-gradient(
-      ellipse 120% 80% at 50% -20%,
-      color-mix(in srgb, var(--camp-forest) 14%, transparent),
-      transparent 55%
-    ),
-    radial-gradient(
-      circle at 100% 0%,
-      color-mix(in srgb, var(--camp-rust) 8%, transparent),
-      transparent 40%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--camp-navy) 6%, transparent) 0%,
-      transparent 35%
-    );
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  background-color: var(--page-offwhite);
   color: var(--foreground);
   font-family: var(--font-sans);
 }
 
-/* Patchwork / badge containers */
+/* Patchwork / badge — chunky “sticker handbook” look */
 .patch-hero {
-  border: 5px solid var(--camp-navy);
-  border-radius: 10px 6px 12px 8px;
+  border: 5px solid var(--cartoon-ink);
+  border-radius: 22px 18px 24px 16px;
   box-shadow:
-    5px 5px 0 var(--camp-forest),
-    10px 10px 0 var(--camp-paper-shadow);
+    6px 6px 0 var(--camp-forest),
+    12px 12px 0 color-mix(in srgb, var(--camp-rust) 55%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--camp-cream) 40%, white) inset;
 }
 
 .patch-card {
@@ -69,22 +73,130 @@ body {
   background: color-mix(in srgb, var(--camp-cream) 92%, white);
 }
 
+/* Trip dashboard — scout-patch style metadata chips */
+.trip-scout-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border: 2px dashed color-mix(in srgb, var(--camp-cream) 72%, var(--camp-navy));
+  border-radius: 4px 10px 6px 8px;
+  background: color-mix(in srgb, var(--camp-rust) 88%, #1a120e);
+  padding: 0.35rem 0.65rem 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.25;
+  color: var(--camp-cream);
+  box-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 color-mix(in srgb, var(--camp-cream) 22%, transparent);
+}
+
+/* Trip card — stops / days patch on hero image */
+.trip-scout-badge--pine {
+  background: color-mix(in srgb, var(--camp-forest) 92%, #0f1815);
+  border-color: color-mix(in srgb, var(--camp-cream) 38%, var(--camp-forest));
+  box-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 color-mix(in srgb, var(--camp-cream) 16%, transparent);
+}
+
+/* Trip card hero — tint + grain (avoid crushing dark art).
+   Isolated so blends never pick up the page behind the card. */
+.trip-card-film-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #2a3238;
+  isolation: isolate;
+}
+
+/* Soft forest/rust wash only — no poster artwork (avoids “header” art showing through). */
+.trip-card-film-media::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.14;
+  background: linear-gradient(
+    168deg,
+    color-mix(in srgb, var(--camp-rust) 35%, transparent) 0%,
+    color-mix(in srgb, var(--camp-forest) 28%, transparent) 48%,
+    transparent 100%
+  );
+}
+
+.trip-card-film-img {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Slight upward bias — horizon / landscape mass usually sits below center */
+  object-position: center 38%;
+  transform: scale(1);
+  transform-origin: center 40%;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Gentle “printed poster” grade — keeps night scenes readable */
+  filter: contrast(1.05) saturate(0.92) brightness(1.05) sepia(0.16)
+    hue-rotate(-8deg);
+}
+
+.group:hover .trip-card-film-img {
+  transform: scale(1.1);
+}
+
+.trip-card-film-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.09;
+  background-image: radial-gradient(
+      circle at 28% 18%,
+      rgba(255, 220, 175, 0.35),
+      transparent 46%
+    ),
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.22) 0.35px,
+      transparent 0.62px
+    );
+  background-size:
+    auto,
+    2px 2px;
+}
+
 /* Paper / parchment surface */
 .paper-surface {
-  background-color: color-mix(in srgb, var(--camp-cream) 96%, white);
+  background-color: var(--paper-surface-fill);
   background-image:
     linear-gradient(
-      165deg,
-      rgba(255, 255, 255, 0.35) 0%,
-      transparent 42%
+      168deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      transparent 45%
     ),
     repeating-linear-gradient(
       0deg,
       transparent,
       transparent 2px,
-      rgba(61, 79, 102, 0.03) 2px,
-      rgba(61, 79, 102, 0.03) 3px
+      rgba(42, 54, 68, 0.04) 2px,
+      rgba(42, 54, 68, 0.04) 3px
     );
+}
+
+/* Wavy separator — storybook section break */
+.cartoon-wave-rule {
+  height: 10px;
+  margin: 0 auto;
+  max-width: 18rem;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 10' preserveAspectRatio='none'%3E%3Cpath d='M0 5 Q15 0 30 5 T60 5 T90 5 T120 5' fill='none' stroke='%232a3644' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+  opacity: 0.55;
 }
 
 .camp-bg {
@@ -147,6 +259,12 @@ body {
   background: color-mix(in srgb, var(--camp-navy) 8%, transparent);
 }
 
+/* Square icon on top of patch secondary (e.g. trip card share). */
+.patch-btn-secondary.patch-btn--icon-only {
+  padding: 0;
+  min-height: 0;
+}
+
 .patch-input {
   border: 2px solid var(--camp-navy);
   border-radius: 6px 8px 5px 7px;
@@ -183,4 +301,1561 @@ body {
   100% {
     background-position: -100% 0;
   }
+}
+
+/* Park office / registration slip */
+.park-registration-card {
+  border: 5px solid var(--cartoon-ink);
+  border-radius: 20px 14px 22px 16px;
+  box-shadow:
+    6px 6px 0 var(--camp-rust),
+    12px 12px 0 var(--camp-paper-shadow),
+    0 0 0 1px color-mix(in srgb, var(--camp-cream) 35%, white) inset;
+}
+
+/* Daily journal — field guide / scout manual */
+.field-guide-carousel {
+  width: 100%;
+  min-width: 0;
+  margin-top: 2rem;
+  /* Shared with .daily-summary inner padding */
+  --journal-card-border: 4px;
+  --journal-pad-x: 1rem;
+  --journal-pad-y-top: 1rem;
+  --journal-pad-y-bottom: 1.1rem;
+}
+
+@media (min-width: 640px) {
+  .field-guide-carousel {
+    --journal-pad-x: 1.25rem;
+    --journal-pad-y-top: 1.15rem;
+    --journal-pad-y-bottom: 1.25rem;
+  }
+}
+
+.field-guide-calendar-shell {
+  width: 100%;
+  margin-inline: 0;
+  margin-bottom: 1.5rem;
+}
+
+/* Day row only: edge fade + chevrons (not on red month bar) */
+.field-guide-calendar-days {
+  position: relative;
+}
+
+.field-guide-calendar-days--fade-left::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: min(3.25rem, 32%);
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 0 0 0 6px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, #fffefb 92%, var(--camp-cream)) 0%,
+    color-mix(in srgb, #fffefb 45%, transparent) 55%,
+    transparent 100%
+  );
+}
+
+.field-guide-calendar-days--fade-right::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: min(3.25rem, 32%);
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 0 0 6px 0;
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, #fffefb 92%, var(--camp-cream)) 0%,
+    color-mix(in srgb, #fffefb 45%, transparent) 55%,
+    transparent 100%
+  );
+}
+
+.field-guide-cal-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 4; /* above day-row gradients */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--camp-forest);
+  cursor: pointer;
+  line-height: 0;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 0 3px rgba(255, 254, 250, 0.95))
+    drop-shadow(0 0 1px rgba(255, 254, 250, 0.85));
+  transition: color 0.12s ease, transform 0.12s ease;
+}
+
+.field-guide-cal-nav:hover {
+  color: var(--camp-rust);
+  transform: translateY(-50%) scale(1.06);
+}
+
+.field-guide-cal-nav:focus-visible {
+  outline: 2px solid var(--camp-rust);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.field-guide-cal-nav--prev {
+  left: 0.1rem;
+}
+
+.field-guide-cal-nav--next {
+  right: 0.1rem;
+}
+
+.field-guide-cal-nav-ico {
+  display: block;
+}
+
+/* Mini calendar strip for trip days */
+.field-guide-calendar {
+  width: 100%;
+  min-width: 0;
+  border: 3px solid var(--camp-navy);
+  border-radius: 10px 8px 12px 8px;
+  background: color-mix(in srgb, var(--camp-cream) 94%, white);
+  box-shadow: 3px 3px 0 var(--camp-rust);
+  overflow: hidden;
+}
+
+.field-guide-calendar-head {
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff8f0;
+  text-shadow: 0 1px 1px rgba(45, 20, 18, 0.45);
+  padding: 0.45rem 1rem 0.4rem;
+  border-bottom: 2px dashed color-mix(in srgb, white 45%, #b91c1c);
+  background: color-mix(in srgb, #c53030 82%, #fff5f5);
+}
+
+.field-guide-calendar-grid {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 1px;
+  padding: 3px;
+  background: color-mix(in srgb, var(--camp-cream) 22%, #f0efe8);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.field-guide-cal-cell {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05rem;
+  min-width: 4.25rem;
+  min-height: 4.1rem;
+  padding: 0.35rem 0.35rem;
+  border: none;
+  margin: 0;
+  background: color-mix(in srgb, var(--camp-cream) 42%, #fffefb);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.field-guide-cal-cell:hover:not(.field-guide-cal-cell--active) {
+  background: color-mix(in srgb, var(--camp-cream) 58%, #fffef9);
+}
+
+.field-guide-cal-cell:focus-visible {
+  outline: 2px solid var(--camp-rust);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.field-guide-cal-cell--active {
+  background: color-mix(in srgb, var(--camp-cream) 78%, #fffef6);
+  box-shadow: inset 0 0 0 2px var(--camp-rust);
+  position: relative;
+  z-index: 1;
+}
+
+.field-guide-cal-wd {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--camp-rust);
+}
+
+.field-guide-cal-dom {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--camp-forest);
+}
+
+.field-guide-cal-trip {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--camp-navy) 72%, transparent);
+  margin-top: 0.1rem;
+}
+
+.field-guide-slides {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  /* No horizontal scrollbar / swipe — switch days from the calendar row only */
+  overflow-x: hidden;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 0.5rem;
+  scroll-behavior: smooth;
+}
+
+.field-guide-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  max-width: 100%;
+  min-width: 100%;
+  scroll-snap-align: start;
+}
+
+/* One card: route map (daily summary) + day journal form */
+.field-guide-journal-combined {
+  border: 4px solid var(--cartoon-ink);
+  border-radius: 14px 18px 12px 16px;
+  box-shadow:
+    5px 5px 0 var(--camp-forest),
+    10px 10px 0 rgba(113, 61, 39, 0.15);
+  background-color: color-mix(in srgb, var(--camp-cream) 94%, white);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.field-guide-journal-combined .daily-summary--merged-map {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* Map / journal split — torn-paper hint at ends (sibling so it isn’t clipped by slides overflow) */
+.field-guide-journal-combined .field-guide-map-tear-line {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  height: 0;
+  pointer-events: none;
+  border-top: 2px dashed color-mix(in srgb, var(--camp-navy) 35%, transparent);
+}
+
+/* Card fill nibbles the dashed rule at corners + slight irregular ink saw-teeth below */
+.field-guide-journal-combined .field-guide-map-tear-line::before,
+.field-guide-journal-combined .field-guide-map-tear-line::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  width: 32px;
+  height: 7px;
+  z-index: 1;
+  background-image:
+    radial-gradient(
+      circle at 5px 52%,
+      color-mix(in srgb, var(--camp-cream) 94%, white) 1.1px,
+      transparent 1.15px
+    ),
+    radial-gradient(
+      circle at 11px 38%,
+      color-mix(in srgb, var(--camp-cream) 94%, white) 0.9px,
+      transparent 0.96px
+    ),
+    radial-gradient(
+      circle at 18px 58%,
+      color-mix(in srgb, var(--camp-cream) 94%, white) 1px,
+      transparent 1.05px
+    ),
+    radial-gradient(
+      circle at 24px 36%,
+      color-mix(in srgb, var(--camp-cream) 94%, white) 0.82px,
+      transparent 0.88px
+    ),
+    radial-gradient(
+      circle at 8.5px 70%,
+      color-mix(in srgb, var(--camp-cream) 94%, white) 0.72px,
+      transparent 0.78px
+    ),
+    radial-gradient(
+      circle at 15px 22%,
+      color-mix(in srgb, var(--camp-cream) 94%, white) 0.62px,
+      transparent 0.68px
+    );
+  background-repeat: no-repeat;
+  opacity: 0.95;
+}
+
+.field-guide-journal-combined .field-guide-map-tear-line::before {
+  left: -1px;
+}
+
+.field-guide-journal-combined .field-guide-map-tear-line::after {
+  right: -1px;
+  transform: scaleX(-1);
+}
+
+.field-guide-journal-combined .field-guide-slides {
+  /* Tall off-screen days must not stretch this strip; height is set in JS from the visible day */
+  overflow-y: hidden;
+}
+
+/* Map hidden while editing: no dashed line where the map used to sit */
+.field-guide-journal-combined--map-hidden .field-guide-map-tear-line {
+  display: none;
+}
+
+.field-guide-journal-combined--map-hidden .field-guide-slides {
+  padding-top: 0.35rem;
+}
+
+.field-guide-journal-combined--map-hidden .daily-summary-head {
+  margin-bottom: 0;
+}
+
+.field-guide-journal-combined .field-guide-day.paper-surface,
+.field-guide-journal-combined .field-guide-day {
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  background-color: transparent;
+  background-image: none;
+}
+
+.field-guide-day {
+  border: 4px solid var(--cartoon-ink);
+  border-radius: 14px 18px 12px 16px;
+  box-shadow:
+    5px 5px 0 var(--camp-forest),
+    10px 10px 0 rgba(113, 61, 39, 0.15);
+  padding: 1.35rem 1.25rem 1.75rem;
+}
+
+@media (min-width: 640px) {
+  .field-guide-day {
+    padding: 1.75rem 1.75rem 2rem;
+  }
+}
+
+.field-guide-day-header {
+  margin-bottom: 1.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px dashed color-mix(in srgb, var(--camp-navy) 35%, transparent);
+}
+
+/* Merged map + journal: dashed tear is .field-guide-map-tear-line (under the map) */
+.field-guide-journal-combined .field-guide-day-merged-divider {
+  margin-bottom: 1.25rem;
+}
+
+/* Rubber-stamp “Saved” badge — park green */
+.stamp-badge-saved {
+  display: inline-block;
+  position: relative;
+  padding: 0.4rem 0.85rem 0.45rem;
+  font-family: var(--font-heading);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #0d2818;
+  background:
+    radial-gradient(
+      circle at 20% 25%,
+      rgba(255, 255, 255, 0.35) 0%,
+      transparent 42%
+    ),
+    linear-gradient(
+      158deg,
+      #dff5e6 0%,
+      #9ddbad 38%,
+      #52b788 72%,
+      #40916c 100%
+    );
+  border: 3px solid #1b4332;
+  border-radius: 5px 11px 6px 9px;
+  box-shadow:
+    3px 4px 0 rgba(15, 61, 46, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -2px 6px rgba(13, 40, 24, 0.12);
+  transform: rotate(-8deg);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.stamp-badge-saved::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px dashed color-mix(in srgb, #1b4332 45%, transparent);
+  border-radius: 3px 8px 4px 6px;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.field-guide-ledger-no {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--camp-rust);
+}
+
+.field-guide-day-title {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  color: var(--camp-forest);
+  margin-top: 0.35rem;
+}
+
+@media (min-width: 640px) {
+  .field-guide-day-title {
+    font-size: 1.6rem;
+  }
+}
+
+.field-guide-day-sub {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--camp-navy) 88%, transparent);
+  max-width: 36rem;
+}
+
+.field-guide-section {
+  margin-bottom: 1.75rem;
+}
+
+.field-guide-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.65rem 0.75rem;
+  /* Same dash color as map / journal tear (.field-guide-map-tear-line) */
+  padding-bottom: 1.15rem;
+  margin-bottom: 0.95rem;
+  border-bottom: 2px dashed color-mix(in srgb, var(--camp-navy) 35%, transparent);
+}
+
+.field-guide-stamp {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--camp-rust);
+  border: 1px solid color-mix(in srgb, var(--camp-rust) 55%, transparent);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  transform: rotate(2deg);
+}
+
+.field-guide-section-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  color: var(--camp-forest);
+}
+
+.field-guide-label {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--camp-navy);
+  margin-bottom: 0.35rem;
+}
+
+.field-guide-hint {
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--camp-navy) 75%, transparent);
+  margin-bottom: 0.35rem;
+}
+
+.field-guide-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.field-guide-stop-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 2px dashed color-mix(in srgb, var(--camp-navy) 38%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--camp-cream) 70%, white);
+}
+
+@media (min-width: 640px) {
+  .field-guide-stop-row {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.field-guide-check {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--camp-forest);
+}
+
+.field-note-page {
+  width: 100%;
+  resize: vertical;
+  min-height: 14rem;
+  /* Ruled pad matches .pre-trip-checklist-slip__pad (margin line + rows); border stays the lighter field-notes frame */
+  --note-line: 2.125rem;
+  padding: 0.45rem 0.75rem 1.1rem 2.65rem;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: var(--note-line);
+  color: var(--cartoon-ink);
+  border: 2px solid color-mix(in srgb, var(--camp-navy) 26%, transparent);
+  border-radius: 13px 17px 11px 15px;
+  background-color: #fffef9;
+  background-image:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--camp-rust) 52%, transparent) 0,
+      color-mix(in srgb, var(--camp-rust) 52%, transparent) 1.25px,
+      transparent 1.25px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent calc(var(--note-line) - 1px),
+      color-mix(in srgb, var(--camp-navy) 11%, transparent) calc(var(--note-line) - 1px),
+      color-mix(in srgb, var(--camp-navy) 11%, transparent) var(--note-line)
+    );
+  background-size: 1.45rem 100%, 100% var(--note-line);
+  background-position: 1.05rem 0, 0 0.2rem;
+  background-repeat: no-repeat, repeat;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 1px 0 rgba(61, 79, 102, 0.06),
+    2px 3px 0 color-mix(in srgb, var(--camp-forest) 18%, transparent);
+  overflow: hidden;
+}
+
+.field-note-page::placeholder {
+  color: color-mix(in srgb, var(--camp-navy) 38%, transparent);
+  font-style: normal;
+}
+
+.field-note-page:focus {
+  outline: 2px solid var(--camp-rust);
+  outline-offset: 2px;
+}
+
+/* Pre-trip checklist — loose-leaf ruled pad with margin line */
+.pre-trip-checklist-slip {
+  border: 4px solid var(--cartoon-ink);
+  border-radius: 14px 18px 12px 16px;
+  box-shadow: 6px 6px 0 var(--trip-dashboard-offset-shadow);
+  background-color: #fffef9;
+  overflow: hidden;
+}
+
+.pre-trip-checklist-slip__toggle {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  /* Fixed strip height: same whether the checklist is empty or has items */
+  height: 4.35rem;
+  min-height: 4.35rem;
+  max-height: 4.35rem;
+  /* Stretch so the label column fills that height (solo title can sit on the vertical middle) */
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0.65rem;
+  padding: 0.85rem 0.85rem 0.85rem 2.65rem;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  background-image: linear-gradient(
+    168deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    transparent 55%
+  );
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .pre-trip-checklist-slip__toggle {
+    height: 4.5rem;
+    min-height: 4.5rem;
+    max-height: 4.5rem;
+  }
+}
+
+.pre-trip-checklist-slip__toggle:hover {
+  background-color: color-mix(in srgb, var(--camp-navy) 4%, transparent);
+}
+
+.pre-trip-checklist-slip__toggle:focus-visible {
+  outline: 2px solid var(--camp-rust);
+  outline-offset: -4px;
+}
+
+.pre-trip-checklist-slip__chevron {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-self: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in srgb, var(--camp-navy) 68%, transparent);
+  transition: transform 0.18s ease;
+}
+
+.pre-trip-checklist-slip__chevron-svg {
+  width: 1.375rem;
+  height: 1.375rem;
+  display: block;
+}
+
+.pre-trip-checklist-slip__toggle[aria-expanded="true"]
+  .pre-trip-checklist-slip__chevron {
+  transform: rotate(90deg);
+}
+
+.pre-trip-checklist-slip__toggle-text {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.125rem;
+}
+
+/* No tasks yet: only “To-do list” — left-aligned, vertically centred in the fixed-height strip */
+.pre-trip-checklist-slip__toggle-text--solo {
+  justify-content: center;
+}
+
+.pre-trip-checklist-slip--dashboard {
+  position: relative;
+  z-index: 1;
+  margin-top: -3px;
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.pre-trip-checklist-slip--open .pre-trip-checklist-slip__toggle {
+  border-bottom: 2px dashed color-mix(in srgb, var(--camp-navy) 30%, transparent);
+}
+
+.pre-trip-checklist-slip__below-toggle {
+  padding: 0.35rem 1.1rem 0.75rem 2.65rem;
+  border-bottom: 2px dashed color-mix(in srgb, var(--camp-navy) 30%, transparent);
+}
+
+.pre-trip-checklist-slip__head {
+  padding: 1rem 1.1rem 0.85rem 2.65rem;
+  border-bottom: 2px dashed color-mix(in srgb, var(--camp-navy) 30%, transparent);
+  background-image: linear-gradient(
+    168deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    transparent 52%
+  );
+}
+
+.pre-trip-checklist-slip__ledger {
+  display: block;
+  min-height: 0.875rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.25;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--camp-rust);
+}
+
+.pre-trip-checklist-slip__title {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  color: var(--camp-forest);
+  margin-top: 0.35rem;
+}
+
+.pre-trip-checklist-slip__toggle .pre-trip-checklist-slip__title {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+@media (min-width: 640px) {
+  .pre-trip-checklist-slip__title {
+    font-size: 1.35rem;
+  }
+
+  .pre-trip-checklist-slip__toggle .pre-trip-checklist-slip__title {
+    font-size: 1.15rem;
+  }
+}
+
+.pre-trip-checklist-slip__hint {
+  margin-top: 0.4rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--camp-navy) 82%, transparent);
+}
+
+.pre-trip-checklist-slip__pad {
+  --check-line: 2.125rem;
+  padding: 0.45rem 0.75rem 1.1rem 2.65rem;
+  background-image:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--camp-rust) 52%, transparent) 0,
+      color-mix(in srgb, var(--camp-rust) 52%, transparent) 1.25px,
+      transparent 1.25px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent calc(var(--check-line) - 1px),
+      color-mix(in srgb, var(--camp-navy) 11%, transparent) calc(var(--check-line) - 1px),
+      color-mix(in srgb, var(--camp-navy) 11%, transparent) var(--check-line)
+    );
+  background-size: 1.45rem 100%, 100% var(--check-line);
+  background-position: 1.05rem 0, 0 0.2rem;
+  background-repeat: no-repeat, repeat;
+}
+
+.pre-trip-checklist-slip__row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: var(--check-line);
+  padding: 0 0.15rem 0 0;
+}
+
+.pre-trip-checklist-slip__line-input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--check-line);
+  padding: 0 0.2rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: var(--check-line);
+  color: var(--cartoon-ink);
+}
+
+.pre-trip-checklist-slip__line-input::placeholder {
+  color: color-mix(in srgb, var(--camp-navy) 38%, transparent);
+  font-style: normal;
+}
+
+.pre-trip-checklist-slip__line-input:focus {
+  outline: none;
+  background: color-mix(in srgb, var(--camp-cream) 45%, transparent);
+}
+
+.pre-trip-checklist-slip__line-input--done {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--camp-navy) 45%, transparent);
+  color: color-mix(in srgb, var(--camp-navy) 55%, transparent);
+}
+
+.pre-trip-checklist-slip__check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.pre-trip-checklist-slip__check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  accent-color: var(--camp-forest);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.pre-trip-checklist-slip__scratch {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: var(--check-line);
+  padding: 0 0.15rem 0 0;
+  margin-top: 0.15rem;
+  border-top: 1px dashed color-mix(in srgb, var(--camp-navy) 18%, transparent);
+}
+
+.pre-trip-checklist-slip__scratch .pre-trip-checklist-slip__check input {
+  cursor: default;
+}
+
+.pre-trip-checklist-slip__scratch-check {
+  opacity: 0.45;
+}
+
+.pre-trip-checklist-slip__scratch-input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--check-line);
+  padding: 0 0.2rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: var(--check-line);
+  color: var(--cartoon-ink);
+}
+
+.pre-trip-checklist-slip__scratch-input::placeholder {
+  color: color-mix(in srgb, var(--camp-navy) 38%, transparent);
+  font-style: normal;
+}
+
+.pre-trip-checklist-slip__scratch-input:focus {
+  outline: none;
+  background: color-mix(in srgb, var(--camp-cream) 40%, transparent);
+}
+
+.pre-trip-checklist-slip__add-text {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.25rem 0.15rem;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--camp-rust) 92%, transparent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--camp-rust) 35%, transparent);
+  text-underline-offset: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pre-trip-checklist-slip__add-text:hover {
+  color: var(--camp-rust);
+  text-decoration-color: color-mix(in srgb, var(--camp-rust) 65%, transparent);
+}
+
+.pre-trip-checklist-slip__add-text:focus-visible {
+  outline: 2px solid var(--camp-rust);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.pre-trip-checklist-slip__remove {
+  flex-shrink: 0;
+  width: 1.65rem;
+  height: 1.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 1.35rem;
+  font-weight: 500;
+  line-height: 1;
+  color: color-mix(in srgb, var(--camp-rust) 85%, transparent);
+  cursor: pointer;
+}
+
+.pre-trip-checklist-slip__remove:hover {
+  background: color-mix(in srgb, var(--camp-rust) 10%, transparent);
+}
+
+.field-note-page--readonly {
+  cursor: default;
+  min-height: 8rem;
+}
+
+/* Saved view: same pad rhythm + sans type as to-do list body */
+.field-guide-readonly .field-note-page--readonly {
+  --note-line: 2.125rem;
+  font-size: 0.9375rem;
+  line-height: var(--note-line);
+  padding: 0.45rem 0.75rem 1.1rem 2.65rem;
+  /* Line up with the section card: same border weight / tone, almost no outer stack */
+  border-color: color-mix(in srgb, var(--camp-navy) 22%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 1px 0 rgba(61, 79, 102, 0.04);
+}
+
+.field-guide-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* —— Saved day view: field guide / magazine hierarchy —— */
+
+.field-guide-readonly .field-guide-section {
+  margin-bottom: 2rem;
+  padding: 1.15rem 1.2rem 1.35rem;
+  border: 2px solid color-mix(in srgb, var(--camp-navy) 24%, transparent);
+  border-radius: 10px 5px 12px 7px;
+  background-color: color-mix(in srgb, var(--camp-cream) 90%, #fffefb);
+  background-image:
+    linear-gradient(
+      168deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      transparent 48%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(42, 54, 68, 0.028) 2px,
+      rgba(42, 54, 68, 0.028) 3px
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    0 1px 0 rgba(61, 79, 102, 0.06);
+}
+
+.field-guide-readonly .field-guide-section:last-child {
+  margin-bottom: 0;
+}
+
+.field-guide-readonly .field-guide-section-head {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.55rem 0.75rem;
+  padding-bottom: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+/* FIG. labels: small stamp / etched badge */
+.field-guide-readonly .field-guide-stamp {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  padding: 0.28rem 0.55rem 0.32rem;
+  border: 2px solid var(--cartoon-ink);
+  border-radius: 3px 5px 4px 4px;
+  transform: rotate(2.5deg);
+  box-shadow:
+    1px 2px 0 rgba(42, 54, 68, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.field-guide-readonly .field-guide-section:nth-of-type(odd) .field-guide-stamp {
+  color: color-mix(in srgb, var(--camp-cream) 18%, #2a0f0a);
+  background: color-mix(in srgb, var(--camp-rust) 38%, var(--camp-cream));
+}
+
+.field-guide-readonly .field-guide-section:nth-of-type(even) .field-guide-stamp {
+  color: color-mix(in srgb, var(--camp-cream) 22%, #0f1c18);
+  background: color-mix(in srgb, var(--camp-forest) 32%, var(--camp-cream));
+}
+
+/* Section headlines: bold serif (dotted rule lives on .field-guide-section-head) */
+.field-guide-readonly .field-guide-section-title {
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-heading), ui-serif, Georgia, serif;
+  font-size: 1.025rem;
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+  color: var(--camp-forest);
+}
+
+@media (min-width: 640px) {
+  .field-guide-readonly .field-guide-section-title {
+    font-size: 1.135rem;
+  }
+}
+
+.field-guide-read-leg-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--camp-rust);
+}
+
+.field-guide-readonly .field-guide-read-leg-title {
+  margin-top: 0.2rem;
+  margin-bottom: 0.35rem;
+  padding: 0;
+  display: inline-block;
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--camp-rust) 88%, #1a100c);
+}
+
+.field-guide-read-row {
+  display: grid;
+  gap: 0.15rem;
+}
+
+@media (min-width: 480px) {
+  .field-guide-read-row {
+    grid-template-columns: 6.25rem 1fr;
+    align-items: baseline;
+    gap: 0.5rem 0.55rem;
+  }
+}
+
+.field-guide-read-label {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--camp-navy) 88%, transparent);
+}
+
+/* Labels: small caps, muted */
+.field-guide-readonly .field-guide-read-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--camp-navy) 52%, #f5f2ea);
+}
+
+.field-guide-read-value {
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  color: var(--camp-navy);
+  margin: 0;
+  min-width: 0;
+}
+
+/* Values: bold serif, modestly larger than caps labels (not shouty) */
+.field-guide-readonly .field-guide-read-value {
+  font-family: var(--font-heading), ui-serif, Georgia, serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--cartoon-ink);
+}
+
+.field-guide-readonly .field-guide-read-value button,
+.field-guide-readonly .field-guide-read-value a {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* Plain readout lines (not the map button): subtle ink underline for emphasis */
+.field-guide-readonly .field-guide-read-value span.inline-block,
+.field-guide-read-stops span.inline-block {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--camp-rust) 38%, transparent);
+  text-decoration-thickness: 1.25px;
+  text-underline-offset: 0.14em;
+}
+
+/* Transport line + chips: stay clean sans while place names use serif */
+.field-guide-read-inline-meta {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--camp-navy);
+}
+
+/* Hand-stamped mini labels (readonly chips) */
+.field-guide-read-chip {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--camp-navy) 88%, #2a2218);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--camp-navy) 38%, transparent);
+  border-radius: 2px 3px 2px 4px;
+  padding: 0.15rem 0.38rem 0.18rem;
+  box-shadow: 0.5px 0.5px 0 rgba(42, 54, 68, 0.12);
+}
+
+.field-guide-readonly .field-guide-read-chip:nth-child(odd) {
+  transform: rotate(-0.6deg);
+}
+
+.field-guide-readonly .field-guide-read-chip:nth-child(even) {
+  transform: rotate(0.45deg);
+}
+
+.field-guide-read-muted {
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--camp-navy) 72%, transparent);
+}
+
+.field-guide-read-stops {
+  font-family: var(--font-heading), ui-serif, Georgia, serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--cartoon-ink);
+}
+
+.field-guide-read-stop-bullet-svg {
+  display: block;
+}
+
+.field-guide-readonly .field-guide-read-stop-bullet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.88;
+}
+
+.field-guide-readonly
+  .field-guide-read-stops
+  li:nth-child(odd)
+  .field-guide-read-stop-bullet {
+  transform: translateY(1px) rotate(-4deg);
+}
+
+.field-guide-readonly
+  .field-guide-read-stops
+  li:nth-child(even)
+  .field-guide-read-stop-bullet {
+  transform: translateY(2px) rotate(5deg);
+}
+
+/* Daily summary — map + scout badge */
+.daily-summary {
+  border: 4px solid var(--cartoon-ink);
+  border-radius: 16px 12px 18px 14px;
+  background: color-mix(in srgb, var(--camp-cream) 94%, white);
+  padding: 1rem 1rem 1.1rem;
+  box-shadow:
+    4px 4px 0 var(--camp-forest),
+    8px 8px 0 rgba(113, 61, 39, 0.12);
+}
+
+@media (min-width: 640px) {
+  .daily-summary {
+    padding: 1.15rem 1.25rem 1.25rem;
+  }
+}
+
+/* Trip journal: keep summary padding in sync with calendar shell (same vars) */
+.field-guide-carousel .daily-summary {
+  padding: var(--journal-pad-y-top) var(--journal-pad-x)
+    var(--journal-pad-y-bottom);
+}
+
+.daily-summary-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 16px;
+  margin-bottom: 0.85rem;
+}
+
+/* ≥16px rhythm below the heading group when edit is shown (wide screens) */
+.daily-summary--merged-map
+  .daily-summary-head:has(> .daily-summary-head-edit) {
+  margin-bottom: calc(0.85rem + 16px);
+}
+
+/* “Daily summary” + day line — edit button centers to this block, not just the H2 */
+.daily-summary-head-text {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.daily-summary-head .field-guide-ledger-no {
+  display: inline-block;
+  margin: 0;
+  padding: 0.2rem 0.45rem 0.22rem 0.52rem;
+  border: 1px dotted color-mix(in srgb, var(--camp-navy) 36%, transparent);
+  border-radius: 3px;
+}
+
+.daily-summary-day-heading {
+  margin: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  line-height: 1.25;
+}
+
+.daily-summary-map-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 3px solid var(--camp-navy);
+  background: color-mix(in srgb, var(--camp-navy) 8%, white);
+}
+
+/*
+ * Trip journal: map fills the frame edge-to-edge (no grey band); driving badge
+ * top-right on the map (lifted above the frame). Link chip stays top-left.
+ */
+.daily-summary--merged-map .daily-summary-map-wrap--scout-overlap {
+  margin-top: 16px;
+  overflow: visible;
+  height: min(52vw, 16rem);
+  min-height: min(52vw, 16rem);
+  background: transparent;
+}
+
+@media (min-width: 640px) {
+  .daily-summary--merged-map .daily-summary-map-wrap--scout-overlap {
+    height: 17rem;
+    min-height: 17rem;
+  }
+}
+
+/*
+ * Narrow / small-tablet: ≥16px breathing room between the edit control (incl.
+ * shadow) and the Patrol badge; head/map rhythm. Extra head margin when edit
+ * is shown (see :has).
+ */
+@media (max-width: 900px) {
+  .daily-summary.daily-summary--merged-map .daily-summary-head {
+    margin-bottom: 1.25rem;
+  }
+
+  .daily-summary.daily-summary--merged-map
+    .daily-summary-head:has(> .daily-summary-head-edit) {
+    margin-bottom: calc(1.25rem + 16px);
+  }
+
+  .daily-summary.daily-summary--merged-map
+    .daily-summary-map-wrap.daily-summary-map-wrap--scout-overlap {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .daily-summary.daily-summary--merged-map .daily-summary-head {
+    margin-bottom: 1.5rem;
+  }
+
+  .daily-summary.daily-summary--merged-map
+    .daily-summary-head:has(> .daily-summary-head-edit) {
+    margin-bottom: calc(1.5rem + 16px);
+  }
+
+  .daily-summary.daily-summary--merged-map
+    .daily-summary-map-wrap.daily-summary-map-wrap--scout-overlap {
+    margin-top: 28px;
+  }
+}
+
+.daily-summary--merged-map
+  .daily-summary-map-wrap--scout-overlap
+  > .daily-summary-map,
+.daily-summary--merged-map
+  .daily-summary-map-wrap--scout-overlap
+  > .daily-summary-map--skeleton,
+.daily-summary--merged-map
+  .daily-summary-map-wrap--scout-overlap
+  > .daily-summary-map--link-only,
+.daily-summary--merged-map
+  .daily-summary-map-wrap--scout-overlap
+  > .daily-summary-map-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.daily-summary--merged-map
+  .daily-summary-map-wrap--scout-overlap
+  > .daily-summary-map-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  font-size: 0.85rem;
+  text-align: center;
+  color: color-mix(in srgb, var(--camp-navy) 88%, transparent);
+  background: color-mix(in srgb, var(--camp-cream) 88%, white);
+}
+
+.daily-summary--merged-map .scout-badge--map-overlap {
+  position: absolute;
+  z-index: 10;
+  top: 0;
+  left: auto;
+  /* Inset from map corner; ~12px from edge keeps clearance while sitting a few px right */
+  right: calc(0.55rem + 12px);
+  bottom: auto;
+  /* Lift above map edge; +16px eases clearance from the edit control on every size */
+  transform: translateY(calc(-34% + 16px)) rotate(-1.5deg);
+  pointer-events: none;
+  /* White paper + light grain (same spirit as .paper-surface) */
+  background-color: #fefefe;
+  background-image:
+    linear-gradient(
+      168deg,
+      rgba(255, 255, 255, 0.85) 0%,
+      transparent 46%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(42, 54, 68, 0.034) 2px,
+      rgba(42, 54, 68, 0.034) 3px
+    ),
+    radial-gradient(
+      circle,
+      rgba(61, 79, 102, 0.04) 0.4px,
+      transparent 0.7px
+    );
+  background-size: auto, auto, 3px 3px;
+  box-shadow:
+    3px 3px 0 var(--camp-navy),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+@media (max-width: 767px) {
+  .daily-summary--merged-map .scout-badge--map-overlap {
+    /* Slightly higher than the default +16px nudge (was +24px) */
+    transform: translateY(calc(-34% + 19px)) rotate(-1.5deg);
+  }
+}
+
+.daily-summary--merged-map .scout-badge--map-overlap .scout-badge-value {
+  font-size: 1.05rem;
+}
+
+.daily-summary--merged-map
+  .daily-summary-map-wrap--scout-overlap
+  .daily-summary-link-attached-badge {
+  left: 0.45rem;
+  right: auto;
+  top: 0.5rem;
+  z-index: 9;
+}
+
+.daily-summary-link-attached-badge {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem 0.3rem;
+  border-radius: 8px;
+  border: 2px solid var(--camp-navy);
+  background: color-mix(in srgb, var(--camp-cream) 94%, white);
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--camp-forest);
+  box-shadow: 2px 2px 0 rgba(113, 61, 39, 0.2);
+}
+
+.daily-summary-link-attached-ico {
+  display: inline-block;
+  width: 0.95rem;
+  height: 0.95rem;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2333544c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.daily-summary-map--link-only {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: color-mix(in srgb, var(--camp-cream) 92%, white);
+}
+
+.daily-summary-map--skeleton {
+  background: color-mix(in srgb, var(--camp-navy) 6%, var(--camp-cream));
+  animation: patch-shimmer 1.4s ease-in-out infinite;
+}
+
+.daily-summary-map {
+  width: 100%;
+  height: min(52vw, 16rem);
+  min-height: 12.5rem;
+}
+
+@media (min-width: 640px) {
+  .daily-summary-map {
+    height: 17rem;
+  }
+}
+
+.daily-summary-map-fallback {
+  min-height: 12.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  font-size: 0.85rem;
+  text-align: center;
+  color: color-mix(in srgb, var(--camp-navy) 88%, transparent);
+  background: color-mix(in srgb, var(--camp-cream) 88%, white);
+}
+
+.scout-badge {
+  position: relative;
+  flex-shrink: 0;
+  width: 11.5rem;
+  max-width: 100%;
+  border: 3px solid var(--camp-rust);
+  border-radius: 10px 10px 8px 8px;
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--camp-cream) 96%, white) 0%,
+    color-mix(in srgb, var(--camp-cream) 82%, #fffef0) 100%
+  );
+  box-shadow:
+    3px 3px 0 var(--camp-navy),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  transform: rotate(-1.5deg);
+}
+
+.scout-badge-ribbon {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -55%);
+  padding: 0.12rem 0.65rem 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--camp-cream);
+  background: var(--camp-forest);
+  /* Match trip card `.trip-scout-badge--pine` edge: dashed, cream-softened forest */
+  border: 2px dashed color-mix(in srgb, var(--camp-cream) 38%, var(--camp-forest));
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 var(--camp-rust);
+}
+
+.scout-badge-body {
+  padding: 1.35rem 0.75rem 0.85rem;
+}
+
+.scout-badge-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--camp-rust);
+}
+
+.scout-badge-label--spaced {
+  margin-top: 0.65rem;
+}
+
+.scout-badge-label--spaced-light {
+  margin-top: 0.45rem;
+}
+
+.scout-badge-note--solo {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.scout-badge-value {
+  margin-top: 0.15rem;
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--camp-forest);
+  line-height: 1.2;
+}
+
+.scout-badge-note {
+  margin-top: 0.2rem;
+  font-size: 0.65rem;
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--camp-navy) 82%, transparent);
+}
+
+.scout-badge-amenities {
+  margin-top: 0.2rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--camp-navy);
 }
