@@ -8,34 +8,20 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import type { JournalTripDay } from "@/lib/build-trip-days";
 import type { DailyJournalEntry } from "@/lib/daily-journal-entry";
-import {
-  normalizeDailyJournalEntry,
-} from "@/lib/daily-journal-entry";
+import type {
+  JournalTrip,
+  PreTripChecklistItem,
+} from "@/lib/journal-trip-model";
+import { parseJournalTripsRecord } from "@/lib/journal-trip-parse";
+import { mergeTripStorages } from "@/lib/trips-cloud-merge";
 import { loadTripsJson, saveTripsJson } from "@/lib/trips-persistence";
 
-export type PreTripChecklistItem = {
-  id: string;
-  label: string;
-  done: boolean;
-};
-
-export type JournalTrip = {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  days: JournalTripDay[];
-  createdAt: string;
-  /** Field-guide entries keyed by calendar day `YYYY-MM-DD` */
-  dayJournal?: Record<string, DailyJournalEntry>;
-  /** Tasks to finish before departure; optional for older saved trips */
-  preTripChecklist?: PreTripChecklistItem[];
-};
+export type { JournalTrip, PreTripChecklistItem } from "@/lib/journal-trip-model";
 
 type JournalTripsContextValue = {
   /** True after we’ve read browser storage for the current auth mode. */
@@ -59,78 +45,115 @@ type JournalTripsContextValue = {
 
 const JournalTripsContext = createContext<JournalTripsContextValue | null>(null);
 
-function normalizePreTripChecklist(raw: unknown): PreTripChecklistItem[] {
-  if (!Array.isArray(raw)) return [];
-  const out: PreTripChecklistItem[] = [];
-  for (const x of raw) {
-    if (!x || typeof x !== "object") continue;
-    const o = x as Record<string, unknown>;
-    if (typeof o.id !== "string" || typeof o.label !== "string") continue;
-    out.push({
-      id: o.id,
-      label: o.label,
-      done: Boolean(o.done),
-    });
-  }
-  return out;
-}
-
-function parseStoredTrips(raw: string): Record<string, JournalTrip> {
-  try {
-    const data = JSON.parse(raw) as Record<string, JournalTrip>;
-    if (!data || typeof data !== "object") return {};
-    for (const id of Object.keys(data)) {
-      const trip = data[id];
-      if (!trip) continue;
-      let next: JournalTrip = trip;
-
-      if (trip.dayJournal && typeof trip.dayJournal === "object") {
-        const nextJournal: Record<string, DailyJournalEntry> = {};
-        for (const [dateISO, entry] of Object.entries(trip.dayJournal)) {
-          nextJournal[dateISO] = normalizeDailyJournalEntry(entry);
-        }
-        next = { ...next, dayJournal: nextJournal };
-      }
-
-      if (trip.preTripChecklist !== undefined) {
-        next = {
-          ...next,
-          preTripChecklist: normalizePreTripChecklist(trip.preTripChecklist),
-        };
-      }
-
-      data[id] = next;
-    }
-    return data;
-  } catch {
-    return {};
-  }
-}
+const CLOUD_PUSH_MS = 1200;
 
 export function JournalTripsProvider({ children }: { children: ReactNode }) {
   const { userId, isLoaded: authLoaded } = useAuth();
   const [tripsById, setTripsById] = useState<Record<string, JournalTrip>>({});
   const [tripsHydrated, setTripsHydrated] = useState(false);
+  const cloudSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userIdRef = useRef<string | null | undefined>(userId);
+  userIdRef.current = userId;
+
+  const scheduleCloudPush = useCallback((json: string) => {
+    const uid = userIdRef.current;
+    if (!uid) return;
+    if (cloudSyncTimerRef.current) clearTimeout(cloudSyncTimerRef.current);
+    cloudSyncTimerRef.current = setTimeout(() => {
+      cloudSyncTimerRef.current = null;
+      void fetch("/api/trips", {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payload: json }),
+      });
+    }, CLOUD_PUSH_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (cloudSyncTimerRef.current) clearTimeout(cloudSyncTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!authLoaded) return;
-    const raw = loadTripsJson(userId ?? null);
-    const data = raw ? parseStoredTrips(raw) : {};
-    startTransition(() => {
-      setTripsById(data);
-      setTripsHydrated(true);
-    });
+
+    if (!userId) {
+      const raw = loadTripsJson(null);
+      const data = raw ? parseJournalTripsRecord(raw) : {};
+      startTransition(() => {
+        setTripsById(data);
+        setTripsHydrated(true);
+      });
+      return;
+    }
+
+    setTripsHydrated(false);
+    let cancelled = false;
+
+    void (async () => {
+      const localRaw = loadTripsJson(userId);
+      const local = localRaw ? parseJournalTripsRecord(localRaw) : {};
+      let merged = local;
+
+      try {
+        const res = await fetch("/api/trips", { credentials: "same-origin" });
+        if (cancelled) return;
+        if (res.ok) {
+          const body = (await res.json()) as {
+            sync?: boolean;
+            payload?: string;
+          };
+          if (body.sync === true && typeof body.payload === "string") {
+            const remote = parseJournalTripsRecord(body.payload);
+            merged = mergeTripStorages(local, remote);
+            const mergedJson = JSON.stringify(merged);
+            saveTripsJson(userId, mergedJson);
+            if (mergedJson !== body.payload) {
+              await fetch("/api/trips", {
+                method: "PUT",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ payload: mergedJson }),
+              });
+            }
+          }
+        }
+      } catch {
+        merged = local;
+      }
+
+      if (cancelled) return;
+      startTransition(() => {
+        setTripsById(merged);
+        setTripsHydrated(true);
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [authLoaded, userId]);
+
+  const persistAndMaybeCloud = useCallback(
+    (next: Record<string, JournalTrip>) => {
+      const json = JSON.stringify(next);
+      saveTripsJson(userId ?? null, json);
+      if (userId) scheduleCloudPush(json);
+    },
+    [userId, scheduleCloudPush],
+  );
 
   const saveTrip = useCallback(
     (trip: JournalTrip) => {
       setTripsById((prev) => {
         const next = { ...prev, [trip.id]: trip };
-        saveTripsJson(userId ?? null, JSON.stringify(next));
+        persistAndMaybeCloud(next);
         return next;
       });
     },
-    [userId],
+    [persistAndMaybeCloud],
   );
 
   const updateTripDayJournal = useCallback(
@@ -146,11 +169,11 @@ export function JournalTripsProvider({ children }: { children: ReactNode }) {
           },
         };
         const next = { ...prev, [tripId]: nextTrip };
-        saveTripsJson(userId ?? null, JSON.stringify(next));
+        persistAndMaybeCloud(next);
         return next;
       });
     },
-    [userId],
+    [persistAndMaybeCloud],
   );
 
   const updateTripPreTripChecklist = useCallback(
@@ -163,11 +186,11 @@ export function JournalTripsProvider({ children }: { children: ReactNode }) {
           preTripChecklist: items.length > 0 ? items : undefined,
         };
         const next = { ...prev, [tripId]: nextTrip };
-        saveTripsJson(userId ?? null, JSON.stringify(next));
+        persistAndMaybeCloud(next);
         return next;
       });
     },
-    [userId],
+    [persistAndMaybeCloud],
   );
 
   const deleteTrip = useCallback(
@@ -176,11 +199,11 @@ export function JournalTripsProvider({ children }: { children: ReactNode }) {
         if (!prev[tripId]) return prev;
         const next = { ...prev };
         delete next[tripId];
-        saveTripsJson(userId ?? null, JSON.stringify(next));
+        persistAndMaybeCloud(next);
         return next;
       });
     },
-    [userId],
+    [persistAndMaybeCloud],
   );
 
   const listTrips = useCallback(() => Object.values(tripsById), [tripsById]);

@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import type { JournalTrip } from "@/context/journal-trips-context";
 import { useJournalTrips } from "@/context/journal-trips-context";
 import { buildTripDaysFromRange } from "@/lib/build-trip-days";
+import {
+  absoluteUrlForPath,
+  fetchTripSharePath,
+  shareFailureMessage,
+} from "@/lib/trip-share-client";
 
 type Props = {
   trip: JournalTrip;
@@ -111,6 +116,26 @@ export function JournalTripHeroMenu({ trip }: Props) {
     setEditOpen(false);
   };
 
+  const handleShareTrip = async () => {
+    setMenuOpen(false);
+    const shareResult = await fetchTripSharePath(trip);
+    if (!shareResult.ok) {
+      window.alert(shareFailureMessage(shareResult));
+      return;
+    }
+    const url = absoluteUrlForPath(shareResult.path);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: trip.name, url });
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        window.alert("Link copied. Anyone with the link can view this trip (read-only).");
+      }
+    } catch {
+      /* cancelled share sheet */
+    }
+  };
+
   const handleDelete = () => {
     const ok = window.confirm(
       "Remove this trip and its journal from this device? This cannot be undone.",
@@ -148,6 +173,14 @@ export function JournalTripHeroMenu({ trip }: Props) {
             onClick={openEdit}
           >
             Edit trip
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full px-3 py-2.5 text-left font-sans text-sm font-semibold text-camp-navy transition hover:bg-camp-navy/[0.06]"
+            onClick={() => void handleShareTrip()}
+          >
+            Share read-only link
           </button>
           <button
             type="button"

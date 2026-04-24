@@ -4,6 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { JournalTrip } from "@/context/journal-trips-context";
 import {
+  absoluteUrlForPath,
+  fetchTripSharePath,
+  shareFailureMessage,
+} from "@/lib/trip-share-client";
+import {
   buildTripCardPhotoUrl,
   countTripStops,
   tripCardFallbackImageUrl,
@@ -77,23 +82,23 @@ export function TripCard({ trip, roundedBottom = true }: TripCardProps) {
   const dayCount = trip.days.length;
   const dateLine = formatTripDateRange(trip);
 
-  const shareHref =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/trips/${trip.id}/journal`
-      : `/trips/${trip.id}/journal`;
-
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const url =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/trips/${trip.id}/journal`
-        : shareHref;
+    const shareResult = await fetchTripSharePath(trip);
+    if (!shareResult.ok) {
+      window.alert(shareFailureMessage(shareResult));
+      return;
+    }
+    const url = absoluteUrlForPath(shareResult.path);
     try {
       if (navigator.share) {
         await navigator.share({ title: trip.name, url });
       } else if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
+        window.alert(
+          "Link copied. Anyone with the link can view this trip (read-only).",
+        );
       }
     } catch {
       /* user cancelled share sheet or clipboard blocked */

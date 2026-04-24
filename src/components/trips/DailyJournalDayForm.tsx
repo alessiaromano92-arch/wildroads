@@ -23,6 +23,19 @@ import {
   hasRequiredDayStart,
   normalizeDailyJournalEntry,
 } from "@/lib/daily-journal-entry";
+
+function dayHasViewerVisibleContent(e: DailyJournalEntry): boolean {
+  if (e.isSubmitted) return true;
+  if (hasRequiredDayStart(e)) return true;
+  if (e.notes.trim().length > 0) return true;
+  if (e.stops.some((s) => hasPlaceContent(s))) return true;
+  if (hasPlaceContent(e.accommodation) || e.bookingUrl.trim().length > 0) {
+    return true;
+  }
+  return e.travelLegs.some(
+    (leg) => hasPlaceContent(leg.startPoint) || hasPlaceContent(leg.endPoint),
+  );
+}
 import { FieldGuidePlaceField } from "@/components/trips/FieldGuidePlaceField";
 import { FriendlyPlaceReadout } from "@/components/trips/FriendlyPlaceReadout";
 
@@ -34,6 +47,8 @@ type Props = {
   day: JournalTripDay;
   stored?: DailyJournalEntry;
   onSave: (entry: DailyJournalEntry) => void;
+  /** Public share page: no editing; draft days still show if they have notes or places. */
+  viewerReadOnly?: boolean;
   /** Center of saved pins on this trip; biases Google search toward the trip area. */
   tripSearchBiasCenter?: google.maps.LatLngLiteral | null;
   /** Map + form share one card; day title lives in the summary header only. */
@@ -386,6 +401,7 @@ export const DailyJournalDayForm = forwardRef<
     mergedJournalLayout = false,
     readOnlyMapTapEnabled = false,
     onReadOnlyMapFocusAt,
+    viewerReadOnly = false,
   },
   ref,
 ) {
@@ -395,8 +411,12 @@ export const DailyJournalDayForm = forwardRef<
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const isReadOnly = Boolean(entry.isSubmitted);
+  const showAsSubmittedView = viewerReadOnly
+    ? dayHasViewerVisibleContent(entry)
+    : isReadOnly;
 
   const handleSave = () => {
+    if (viewerReadOnly) return;
     if (!hasRequiredDayStart(entry)) {
       setSaveError("Set leg 1’s start (a place) before saving.");
       return;
@@ -413,12 +433,13 @@ export const DailyJournalDayForm = forwardRef<
   };
 
   const handleEdit = useCallback(() => {
+    if (viewerReadOnly) return;
     if (!entry.isSubmitted) return;
     setSaveError(null);
     const next: DailyJournalEntry = { ...entry, isSubmitted: false };
     setEntry(next);
     onSave(next);
-  }, [entry, onSave]);
+  }, [entry, onSave, viewerReadOnly]);
 
   const mapTapEnabled =
     Boolean(readOnlyMapTapEnabled) && typeof onReadOnlyMapFocusAt === "function";
@@ -461,10 +482,10 @@ export const DailyJournalDayForm = forwardRef<
     ref,
     () => ({
       requestEdit: () => {
-        handleEdit();
+        if (!viewerReadOnly) handleEdit();
       },
     }),
-    [handleEdit],
+    [handleEdit, viewerReadOnly],
   );
 
   const addStop = () => {
@@ -501,12 +522,12 @@ export const DailyJournalDayForm = forwardRef<
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 flex-wrap items-center gap-3">
               <h2
-                className={`field-guide-day-title${isReadOnly ? " mt-0" : ""}`}
+                className={`field-guide-day-title${showAsSubmittedView ? " mt-0" : ""}`}
               >
                 {day.label}
               </h2>
             </div>
-            {isReadOnly ? (
+            {isReadOnly && !viewerReadOnly ? (
               <button
                 type="button"
                 className="patch-btn-secondary shrink-0 text-sm"
@@ -519,7 +540,11 @@ export const DailyJournalDayForm = forwardRef<
         </header>
       )}
 
-      {isReadOnly ? (
+      {viewerReadOnly && !showAsSubmittedView ? (
+        <p className="field-guide-readonly px-1 py-6 font-sans text-sm text-camp-navy/75">
+          Nothing logged for this day yet.
+        </p>
+      ) : showAsSubmittedView ? (
         <SubmittedDayView
           entry={entry}
           mapTapEnabled={mapTapEnabled}

@@ -22,6 +22,8 @@ import {
 
 type Props = {
   trip: JournalTrip;
+  /** Public link: no edits; map taps still work for submitted days. */
+  readOnlyViewer?: boolean;
 };
 
 function calendarParts(dateISO: string) {
@@ -77,7 +79,10 @@ function ChevronRightIcon() {
   );
 }
 
-export function DailyJournalCarousel({ trip }: Props) {
+export function DailyJournalCarousel({
+  trip,
+  readOnlyViewer = false,
+}: Props) {
   const { updateTripDayJournal } = useJournalTrips();
   /** Day forms strip: scroll position is updated when the calendar changes day (no user horizontal scroll). */
   const slidesScrollRef = useRef<HTMLDivElement>(null);
@@ -284,7 +289,7 @@ export function DailyJournalCarousel({ trip }: Props) {
           entry={visibleEntry}
           showMap={summaryShowsMap}
           onEditSubmittedDay={
-            visibleEntry?.isSubmitted
+            !readOnlyViewer && visibleEntry?.isSubmitted
               ? () =>
                   dayFormApiRef.current[visibleDay.dateISO]?.requestEdit()
               : undefined
@@ -309,9 +314,12 @@ export function DailyJournalCarousel({ trip }: Props) {
                   day={day}
                   stored={stored}
                   tripSearchBiasCenter={tripSearchBiasCenter}
-                  onSave={(entry) =>
-                    updateTripDayJournal(trip.id, day.dateISO, entry)
-                  }
+                  viewerReadOnly={readOnlyViewer}
+                  onSave={(entry) => {
+                    if (!readOnlyViewer) {
+                      updateTripDayJournal(trip.id, day.dateISO, entry);
+                    }
+                  }}
                   readOnlyMapTapEnabled={
                     Boolean(stored?.isSubmitted) &&
                     summaryShowsMap &&
