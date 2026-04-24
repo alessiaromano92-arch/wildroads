@@ -346,11 +346,13 @@ function SubmittedDayView({
                 <span className="field-guide-read-value">
                   <a
                     href={entry.bookingUrl.trim()}
-                    className="font-medium text-camp-rust underline"
+                    className="inline-flex max-w-full font-medium text-camp-rust underline"
                     target="_blank"
                     rel="noopener noreferrer"
+                    title={entry.bookingUrl.trim()}
+                    aria-label="Open booking link in a new tab"
                   >
-                    {entry.bookingUrl.trim()}
+                    View link 🔗
                   </a>
                 </span>
               </div>
