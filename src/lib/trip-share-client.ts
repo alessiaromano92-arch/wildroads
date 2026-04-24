@@ -46,7 +46,16 @@ export function absoluteUrlForPath(path: string): string {
 export function shareFailureMessage(result: SharePathResult): string {
   if (result.ok) return "";
   if (result.reason === "no-redis") {
-    return "Guest links need cloud storage. Add UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to .env.local (see .env.example), then restart the dev server with npm run dev.";
+    const host =
+      typeof window !== "undefined" ? window.location.hostname : "";
+    const isLocal =
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host.endsWith(".local");
+    if (isLocal) {
+      return "Guest links need cloud storage. Add UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to .env.local (see .env.example), then restart with npm run dev.";
+    }
+    return "Guest links need cloud storage on this site. In Vercel: Project → Settings → Environment Variables, add UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN (from your Upstash Redis REST API tab), then redeploy.";
   }
   return "Could not create the link. Check you’re signed in, your connection, and try again.";
 }
